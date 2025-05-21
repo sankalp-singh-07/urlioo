@@ -19,9 +19,9 @@
         <div class="logo">
             URLioo
         </div>
-        <a href="prevLinks" class="links">
+        <p class="links">
             Links
-        </a>
+        </p>
     </div>
     <div class="container">
         <!-- Text Section with form -->
@@ -30,7 +30,7 @@
             <h1 class="heading">Shrink links in seconds</h1>
             <p class="miniHeading">Drop your long URLs and get clean, simple links in one click. Fast. Secure. Reliable.</p>
             <form class="form">
-                <input class="input" placeholder="Your Link"/>
+                <input class="input" id="inputField" placeholder="Your Link"/>
                 <button class="shortURL" type="submit">Generate Link</button>
             </form>
             <p class="loadingUrl hid">LOADING SHORT LINK. Please Wait 😊</p>
@@ -46,23 +46,20 @@
         <div class="prev-links-section">
         <h2 class="prevLinks">Previous Links 🔗</h2>
         <div id="linksWrapper" class="links-wrapper">
-            <div class="link-item">
+            <!-- <div class="link-item">
                 <p class="original-link">https://very-long-original-link.com/page/abc</p>
                 <div class="link-details">
                     <span class="short-link">https://urlioo.xyz/abc123</span>
                     <div class="copyPart">
-                        <button class="copy-btn" data-copy="original">Copy Original</button>
-                        <button class="copy-btn" data-copy="short">Copy Short</button>
-                        <div class="visits">
-                        <span class="eye">👁</span>
-                        <span class="count">120</span>
+                        <button class="copy-btn"  data-copy="original">Copy Original</button>
+                        <button class="copy-btn"  data-copy="short">Copy Short</button>
                         <span class="delete">X</span>
                     </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
         </div>
-        <button id="showMoreBtn" class="show-more-btn">Show More</button>
+        <button id="showMoreBtn" class="show-more-btn hid">Show More</button>
         </div>
 
 
