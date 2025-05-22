@@ -211,6 +211,10 @@ body{
     .links{
         display: none;
     }
+
+    .navbar{
+        justify-content: center;
+    }
 }
 
 
