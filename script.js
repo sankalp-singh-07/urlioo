@@ -1,192 +1,171 @@
 'use strict';
 
-// Elements
-const Form = document.querySelector('.form');
-const Input = document.querySelector('.input');
+const form = document.querySelector('.form');
+const input = document.querySelector('.input');
 const submitBtn = document.querySelector('.shortURL');
 const qrImg = document.getElementById('imgqr');
-const qrsec = document.querySelector('.qrSec');
+const qrSec = document.querySelector('.qrSec');
 const urlShort = document.querySelector('.urlshort');
 const copyBtnQr = document.querySelector('.copyurl');
 const loadingUrl = document.querySelector('.loadingUrl');
+const showMoreBtn = document.querySelector('#showMoreBtn');
+const wrapper = document.querySelector('.links-wrapper');
+const inputField = document.getElementById('inputField');
+const footerBtn = document.querySelector('.footerBTN');
+const linksBtn = document.querySelector('.links');
+const prevLinksSection = document.querySelector('.prev-links-section');
+const navbar = document.querySelector('.navbar');
 
 let linkShort = '';
 
-const curr = {
-	old: '',
-	new: '',
-	time: new Date().getTime(),
-};
+let arr = JSON.parse(localStorage.getItem('shortLinks')) || [];
 
-let arr = JSON.parse(localStorage.getItem('shortLinks')) ?? [];
-
-Form.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
 	e.preventDefault();
-	const link = Input.value;
-	curr.old = link;
+	const originalLink = input.value.trim();
+
+	if (!checkUrl(originalLink)) return;
+
+	const fullLink = checkHttps(originalLink)
+		? originalLink
+		: `http://${originalLink}`;
 	try {
-		if (checkUrl(link)) {
-			if (checkhttps(link)) {
-				getLink(link);
-			} else {
-				const s = 'http://' + link;
-				getLink(s);
-			}
-		} else return false;
-	} catch (error) {
-		console.log(error);
+		await getShortLink(fullLink);
+	} catch (err) {
+		console.error(err);
 	}
 });
 
-const checkhttps = (link) => link.startsWith('http');
+function checkHttps(link) {
+	return link.startsWith('http');
+}
 
-const getLink = async (linkLong) => {
-	const res = await fetch('https://api-ssl.bitly.com/v4/shorten', {
+function checkUrl(url) {
+	const urlPattern =
+		/^(https?:\/\/)?([\w\-]+(\.[\w\-]+)+)(\/[\w\-./?%&=]*)?$/i;
+	return urlPattern.test(url);
+}
+
+async function getShortLink(linkLong) {
+	submitBtn.textContent = 'Generating...';
+	qrSec.classList.add('hid');
+	loadingUrl.classList.remove('hid');
+
+	const response = await fetch('https://api-ssl.bitly.com/v4/shorten', {
 		method: 'POST',
 		headers: {
-			Authorization: 'Bearer ac97dfccc2169fececa29173535c199e6584aed1',
+			Authorization: 'Bearer YOUR_BITLY_TOKEN_HERE',
 			'Content-Type': 'application/json',
 		},
-		body: JSON.stringify({
-			long_url: linkLong,
-		}),
+		body: JSON.stringify({ long_url: linkLong }),
 	});
-	if (!res.ok) throw new Error('Bitly Error');
-	const data = await res.json();
-	const { link, created_at } = data;
-	curr.new = link;
+
+	if (!response.ok) throw new Error('Failed to fetch short URL');
+
+	const data = await response.json();
+	const { link } = data;
+
 	linkShort = link;
 
-	//> showing loading
-	submitBtn.textContent = 'Generating...';
-	qrsec.classList.add('hid');
-	loadingUrl.classList.remove('hid');
 	setTimeout(() => {
 		loadingUrl.classList.add('hid');
-		qrsec.classList.remove('hid');
+		qrSec.classList.remove('hid');
 		submitBtn.textContent = 'Generate Link';
 	}, 3000);
 
-	//>generate qr
-	const qrCode = generateQRCode(link);
-	qrImg.src = qrCode;
-
+	qrImg.src = generateQRCode(link);
 	urlShort.textContent = link;
-	arrUpdate({ ...curr });
-};
+	addLink({ old: linkLong, new: link, time: Date.now() });
+}
+
+function generateQRCode(link) {
+	return `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
+		link
+	)}&size=200x200`;
+}
 
 urlShort.addEventListener('click', () => {
 	window.open(linkShort, '_blank');
 });
 
 copyBtnQr.addEventListener('click', () => {
-	navigator.clipboard
-		.writeText(linkShort)
-		.then(() => {
-			copyBtnQr.textContent = 'Copied';
-			setTimeout(() => {
-				copyBtnQr.textContent = 'Copy Link';
-			}, 3000);
-		})
-		.catch((error) => alert(error));
+	navigator.clipboard.writeText(linkShort).then(() => {
+		copyBtnQr.textContent = 'Copied';
+		setTimeout(() => (copyBtnQr.textContent = 'Copy Link'), 3000);
+	});
 });
 
-const urlPattern = /^(https?:\/\/)?([\w\-]+(\.[\w\-]+)+)(\/[\w\-./?%&=]*)?$/i;
-
-const checkUrl = (url) => {
-	return urlPattern.test(url);
-};
-
-const generateQRCode = (link) => {
-	return `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
-		link
-	)}&size=200x200`;
-};
-
-//> Previous links
-function arrUpdate(curr) {
-	arr.push(curr);
-
-	console.log(arr);
-
+function addLink(linkData) {
+	arr.push(linkData);
 	localStorage.setItem('shortLinks', JSON.stringify(arr));
 
 	const trimmed = arr.slice(0, 3);
-	console.log(trimmed);
+	localStorage.setItem('trimLinks', JSON.stringify(trimmed));
+	renderLinks();
 }
 
-//> Previous Links shown
-const wrapper = document.querySelector('.links-wrapper');
-const existing = JSON.parse(localStorage.getItem('shortLinks')) || [];
-existing.forEach((ele) => {
-	const prev = document.createElement('div');
-	prev.classList.add('link-item');
-	prev.innerHTML = `
-		<p class="original-link">${ele.old}</p>
-		<div class="link-details">
-			<span class="short-link">${ele.new}</span>
-			<div class="copyPart">
-				<button class="copy-btn" data-copy="original">Copy Original</button>
-				<button class="copy-btn" data-copy="short">Copy Short</button>
-				<span class="delete">X</span>
-			</div>
-		</div>
-	`;
+function renderLinks() {
+	wrapper.innerHTML = '';
 
-	wrapper.appendChild(prev);
-});
+	const linksToShow =
+		arr.length <= 3 ? arr : JSON.parse(localStorage.getItem('trimLinks'));
+	showMoreBtn.classList.toggle('hid', arr.length <= 3);
+
+	linksToShow.forEach(({ old, new: short }) => {
+		const div = document.createElement('div');
+		div.className = 'link-item';
+		div.innerHTML = `
+      <p class="original-link">${old}</p>
+      <div class="link-details">
+        <span class="short-link">${short}</span>
+        <div class="copyPart">
+          <button class="copy-btn" data-copy="original">Copy Original</button>
+          <button class="copy-btn" data-copy="short">Copy Short</button>
+          <span class="delete">X</span>
+        </div>
+      </div>`;
+		wrapper.appendChild(div);
+	});
+}
 
 wrapper.addEventListener('click', (e) => {
 	if (e.target.classList.contains('copy-btn')) {
 		const btn = e.target;
-		const dataset = btn.dataset.copy;
-		const linkItem = btn.closest('.link-item');
-		const text =
-			dataset === 'original'
-				? linkItem.querySelector('.original-link').textContent
-				: linkItem.querySelector('.short-link').textContent;
+		const type = btn.dataset.copy;
+		const text = btn
+			.closest('.link-item')
+			.querySelector(
+				type === 'original' ? '.original-link' : '.short-link'
+			).textContent;
 
-		navigator.clipboard
-			.writeText(text)
-			.then(() => {
-				btn.textContent = 'Copied';
-				setTimeout(() => {
-					btn.textContent =
-						dataset === 'original' ? 'Copy Original' : 'Copy Short';
-				}, 2000);
-			})
-			.catch((err) => {
-				alert('Copy failed: ' + err);
-			});
+		navigator.clipboard.writeText(text).then(() => {
+			btn.textContent = 'Copied';
+			setTimeout(() => {
+				btn.textContent =
+					type === 'original' ? 'Copy Original' : 'Copy Short';
+			}, 2000);
+		});
 	}
-});
 
-wrapper.addEventListener('click', (e) => {
 	if (e.target.classList.contains('delete')) {
-		const btn = e.target;
-		const linkItem = btn.closest('.link-item');
-		const shortLink = linkItem.querySelector('.short-link').textContent;
-		// console.log(shortLink);
-		linkItem.remove();
-
-		const newArr = arr.filter((item) => item.new != shortLink);
-		localStorage.setItem('shortLinks', JSON.stringify(newArr));
+		const shortLink = e.target
+			.closest('.link-item')
+			.querySelector('.short-link').textContent;
+		arr = arr.filter((item) => item.new !== shortLink);
+		localStorage.setItem('shortLinks', JSON.stringify(arr));
+		const trimmed = arr.slice(0, 3);
+		localStorage.setItem('trimLinks', JSON.stringify(trimmed));
+		renderLinks();
 	}
 });
 
-//> Field focus
-const inputField = document.getElementById('inputField');
-document.querySelector('.footerBTN').addEventListener('click', () => {
+footerBtn.addEventListener('click', () => {
 	inputField.focus();
-	document.querySelector('.navbar').scrollIntoView({
-		behavior: 'smooth',
-		block: 'start',
-	});
+	navbar.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
-document.querySelector('.links').addEventListener('click', () => {
-	document.querySelector('.prev-links-section').scrollIntoView({
-		behavior: 'smooth',
-		block: 'start',
-	});
+linksBtn.addEventListener('click', () => {
+	prevLinksSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
+
+renderLinks();
