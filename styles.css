@@ -207,6 +207,10 @@ body{
         justify-content: center;
         align-items: center;
     }
+
+    .links{
+        display: none;
+    }
 }
 
 

@@ -54,7 +54,7 @@ async function getShortLink(linkLong) {
 	const response = await fetch('https://api-ssl.bitly.com/v4/shorten', {
 		method: 'POST',
 		headers: {
-			Authorization: 'Bearer YOUR_BITLY_TOKEN_HERE',
+			Authorization: 'Bearer 56e240f601e9895ec594c624a4dcbd92ad53aa02',
 			'Content-Type': 'application/json',
 		},
 		body: JSON.stringify({ long_url: linkLong }),
@@ -159,6 +159,26 @@ wrapper.addEventListener('click', (e) => {
 	}
 });
 
+showMoreBtn.addEventListener('click', () => {
+	showMoreBtn.classList.add('hid');
+	for (let i = 3; i < arr.length; i++) {
+		const { old, new: short } = arr[i];
+		const div = document.createElement('div');
+		div.className = 'link-item';
+		div.innerHTML = `
+      <p class="original-link">${old}</p>
+      <div class="link-details">
+        <span class="short-link">${short}</span>
+        <div class="copyPart">
+          <button class="copy-btn" data-copy="original">Copy Original</button>
+          <button class="copy-btn" data-copy="short">Copy Short</button>
+          <span class="delete">X</span>
+        </div>
+      </div>`;
+		wrapper.appendChild(div);
+	}
+});
+
 footerBtn.addEventListener('click', () => {
 	inputField.focus();
 	navbar.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -169,3 +189,4 @@ linksBtn.addEventListener('click', () => {
 });
 
 renderLinks();
+input.value = '';
